@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-sans text-espresso;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brass/30 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brass/50;
+  }
+}
+
+@layer components {
+  /* Parchment paper texture background */
+  .bg-parchment-texture {
+    background-color: #FAF7F2;
+    background-image:
+      url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  .dark .bg-parchment-texture {
+    background-color: #141413;
+    background-image:
+      url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+
+  /* Brass border accents */
+  .border-brass-accent {
+    @apply border-brass/30;
+  }
+
+  .dark .border-brass-accent {
+    @apply border-amber/20;
+  }
+
+  /* Sold out stamp */
+  .sold-out-stamp {
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+           px-3 py-1 border-2 border-soldout-red text-soldout-red
+           font-serif font-bold text-xs tracking-widest uppercase
+           -rotate-6 animate-stamp pointer-events-none select-none;
+  }
+
+  /* Strike-through line */
+  .strike-line {
+    @apply absolute left-0 right-0 top-1/2 h-[2px] bg-soldout-red/60
+           -translate-y-1/2 pointer-events-none;
+  }
+
+  /* Toggle switch */
+  .toggle-switch {
+    @apply relative inline-flex h-7 w-12 cursor-pointer items-center
+           rounded-full transition-colors duration-200 ease-in-out
+           focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-brass focus-visible:ring-offset-2;
+  }
+  .toggle-switch[data-state="checked"] {
+    @apply bg-veg-green;
+  }
+  .toggle-switch[data-state="unchecked"] {
+    @apply bg-gray-300 dark:bg-gray-600;
+  }
+  .toggle-knob {
+    @apply inline-block h-5 w-5 transform rounded-full bg-white shadow-md
+           ring-0 transition-transform duration-200 ease-in-out;
+  }
+  .toggle-switch[data-state="checked"] .toggle-knob {
+    @apply translate-x-6;
+  }
+  .toggle-switch[data-state="unchecked"] .toggle-knob {
+    @apply translate-x-1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

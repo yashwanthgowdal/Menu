@@ -1,0 +1,46 @@
+// Prisma schema for NoWave E-Menu (SQLite local, migrate to Supabase PostgreSQL)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id               String   @id @default(cuid())
+  name             String
+  description      String
+  price            Float
+  imageUrl         String?
+  dietaryType      String   @default("veg") // veg, nonveg, vegan, egg
+  spiceLevel       Int      @default(1) // 1-5
+  isChefSpecial    Boolean  @default(false)
+  availabilitySlot String   @default("all_day") // morning_only, lunch_dinner, all_day
+  isStruckOut      Boolean  @default(false)
+  sortOrder        Int      @default(0)
+  categoryId       String
+  category         Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
