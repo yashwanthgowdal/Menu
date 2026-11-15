@@ -358,7 +358,16 @@ export default function MenuPage() {
   const [viewMode, setViewMode] = useState<"scroll" | "flip">("scroll");
   const [lightbox, setLightbox] = useState<{ url: string; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tableNumber, setTableNumber] = useState<string | null>(null);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const table = params.get("table");
+      if (table) setTableNumber(table);
+    }
+  }, []);
 
   // ─── Fetch data ───
   const fetchData = useCallback(async () => {
@@ -483,9 +492,16 @@ export default function MenuPage() {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-serif text-3xl md:text-4xl font-bold text-espresso dark:text-parchment tracking-tight">
-                NoWave
-              </h1>
+              <div className="flex items-center gap-2.5">
+                <h1 className="font-serif text-3xl md:text-4xl font-bold text-espresso dark:text-parchment tracking-tight">
+                  NoWave
+                </h1>
+                {tableNumber && (
+                  <span className="text-[11px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-brass/15 dark:bg-amber/15 text-brass-dark dark:text-amber border border-brass/30 dark:border-amber/30">
+                    Table {tableNumber}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-espresso/50 dark:text-parchment/40 font-sans mt-0.5 tracking-wide">
                 E-Menu
               </p>

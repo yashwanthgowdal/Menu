@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LogOut, Plus, RotateCcw, ExternalLink, Search, ChevronDown,
   Trash2, Edit3, X, Upload, AlertTriangle, Check, Coffee,
-  FolderOpen, GripVertical, Flame
+  FolderOpen, GripVertical, Flame, QrCode, Printer, Download, Copy
 } from "lucide-react";
+import QRCode from "qrcode";
 import { useRouter } from "next/navigation";
 import { cn, formatPrice, AVAILABILITY_LABELS, DIETARY_LABELS } from "@/lib/utils";
 
@@ -460,6 +461,300 @@ function CategoryManagerModal({
   );
 }
 
+// ─── Table QR Modal ───
+function TableQrModal({
+  onClose,
+  showToast,
+}: {
+  onClose: () => void;
+  showToast: (msg: string, type: "success" | "error") => void;
+}) {
+  const [baseUrl, setBaseUrl] = useState("");
+  const [tableMode, setTableMode] = useState<"general" | "table">("general");
+  const [tableNumber, setTableNumber] = useState("1");
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setBaseUrl(window.location.origin);
+    }
+  }, []);
+
+  const targetUrl = `${baseUrl || ""}/menu${tableMode === "table" ? `?table=${tableNumber}` : ""}`;
+
+  useEffect(() => {
+    if (targetUrl) {
+      QRCode.toDataURL(targetUrl, {
+        width: 380,
+        margin: 2,
+        color: {
+          dark: "#1C1917",
+          light: "#FAF7F2",
+        },
+      })
+        .then(setQrCodeUrl)
+        .catch(console.error);
+    }
+  }, [targetUrl]);
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(targetUrl);
+    showToast("Menu URL copied to clipboard", "success");
+  };
+
+  const downloadQr = () => {
+    if (!qrCodeUrl) return;
+    const a = document.createElement("a");
+    a.href = qrCodeUrl;
+    a.download = tableMode === "table" ? `nowave-menu-table-${tableNumber}.png` : "nowave-menu-qr.png";
+    a.click();
+    showToast("QR code downloaded", "success");
+  };
+
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>NoWave Table Stand - ${tableMode === 'table' ? `Table ${tableNumber}` : 'Menu'}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600&display=swap');
+            body {
+              margin: 0;
+              padding: 40px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              font-family: 'Plus Jakarta Sans', sans-serif;
+              background-color: #FAF7F2;
+            }
+            .card {
+              border: 3px double #B48A3E;
+              border-radius: 16px;
+              padding: 36px 32px;
+              text-align: center;
+              background: #FAF7F2;
+              width: 320px;
+              box-shadow: 0 4px 20px rgba(28,25,23,0.08);
+            }
+            h1 {
+              font-family: 'Playfair Display', serif;
+              font-size: 28px;
+              color: #1C1917;
+              margin: 0 0 4px 0;
+            }
+            .badge {
+              display: inline-block;
+              background: #B48A3E;
+              color: white;
+              font-size: 11px;
+              font-weight: 600;
+              letter-spacing: 2px;
+              text-transform: uppercase;
+              padding: 4px 12px;
+              border-radius: 20px;
+              margin: 8px 0 16px 0;
+            }
+            .qr-frame {
+              background: white;
+              padding: 12px;
+              border: 1px solid rgba(180,138,62,0.3);
+              border-radius: 12px;
+              display: inline-block;
+              margin-bottom: 16px;
+            }
+            .qr-img {
+              width: 220px;
+              height: 220px;
+              display: block;
+            }
+            p.scan {
+              font-size: 13px;
+              color: #1C1917;
+              opacity: 0.7;
+              margin: 0 0 16px 0;
+            }
+            .tagline {
+              font-family: 'Playfair Display', serif;
+              font-size: 15px;
+              font-weight: 600;
+              color: #B48A3E;
+              border-top: 1px solid rgba(180,138,62,0.2);
+              padding-top: 14px;
+              margin: 0;
+            }
+            @media print {
+              body { background: white; padding: 0; }
+              .card { box-shadow: none; border-color: #B48A3E; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1>NoWave</h1>
+            <div>
+              <span class="badge">${tableMode === 'table' ? `TABLE ${tableNumber}` : 'DIGITAL E-MENU'}</span>
+            </div>
+            <div class="qr-frame">
+              <img class="qr-img" src="${qrCodeUrl}" alt="Menu QR Code" />
+            </div>
+            <p class="scan">Scan with your camera to view today's live menu</p>
+            <p class="tagline">No Wave. Just Tilt.</p>
+          </div>
+          <script>
+            window.onload = () => { setTimeout(() => { window.print(); }, 400); };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-8"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <QrCode className="w-5 h-5 text-brass" />
+            <h3 className="font-serif text-xl font-bold text-espresso">Table QR Codes</h3>
+          </div>
+          <button onClick={onClose} className="text-espresso/40 hover:text-espresso">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Base URL */}
+          <div>
+            <label className="block text-xs font-semibold text-espresso/60 uppercase tracking-wider mb-1">
+              Menu Domain / URL
+            </label>
+            <input
+              type="text"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="http://localhost:3000 or https://your-domain.com"
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brass/30 text-sm font-mono text-espresso"
+            />
+            <p className="text-[11px] text-espresso/40 mt-1">
+              For dining room testing on mobile, enter your local Wi-Fi IP (e.g. <code>http://192.168.1.X:3000</code>).
+            </p>
+          </div>
+
+          {/* Mode Selection */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setTableMode("general")}
+              className={cn(
+                "py-2.5 px-3 rounded-xl border text-sm font-medium transition-all text-center",
+                tableMode === "general"
+                  ? "border-brass bg-brass/10 text-brass-dark font-semibold shadow-sm"
+                  : "border-gray-200 text-espresso/60 hover:bg-gray-50"
+              )}
+            >
+              General Menu QR
+            </button>
+            <button
+              type="button"
+              onClick={() => setTableMode("table")}
+              className={cn(
+                "py-2.5 px-3 rounded-xl border text-sm font-medium transition-all text-center",
+                tableMode === "table"
+                  ? "border-brass bg-brass/10 text-brass-dark font-semibold shadow-sm"
+                  : "border-gray-200 text-espresso/60 hover:bg-gray-50"
+              )}
+            >
+              Table-Specific QR
+            </button>
+          </div>
+
+          {/* Table Number selector */}
+          {tableMode === "table" && (
+            <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <span className="text-sm font-medium text-espresso/70">Table Number:</span>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                className="w-20 px-3 py-1.5 rounded-lg border border-gray-300 text-center font-bold text-espresso text-base focus:outline-none focus:border-brass"
+              />
+              <span className="text-xs text-espresso/40">
+                (Will open <code>/menu?table={tableNumber}</code>)
+              </span>
+            </div>
+          )}
+
+          {/* Card Preview */}
+          <div className="bg-[#FAF7F2] border-2 border-brass/30 rounded-xl p-5 text-center shadow-inner">
+            <h4 className="font-serif text-xl font-bold text-espresso">NoWave</h4>
+            <span className="inline-block bg-brass text-white text-[10px] font-semibold tracking-widest uppercase px-2.5 py-0.5 rounded-full my-1.5">
+              {tableMode === "table" ? `TABLE ${tableNumber}` : "DIGITAL E-MENU"}
+            </span>
+
+            <div className="my-3 inline-block bg-white p-3 rounded-xl shadow-sm border border-brass/20">
+              {qrCodeUrl ? (
+                <img src={qrCodeUrl} alt="Menu QR Code" className="w-40 h-40 object-contain mx-auto" />
+              ) : (
+                <div className="w-40 h-40 flex items-center justify-center text-xs text-espresso/40">
+                  Generating QR…
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-espresso/60">Scan with your phone camera to view menu</p>
+            <p className="font-serif text-xs font-semibold text-brass mt-2 italic">
+              Need service or ready to order? No Wave. Just Tilt.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={copyUrl}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-espresso/70 font-medium hover:bg-gray-50 transition-colors text-xs"
+            >
+              <Copy className="w-3.5 h-3.5" /> Copy Link
+            </button>
+            <button
+              type="button"
+              onClick={downloadQr}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-gray-200 text-espresso/70 font-medium hover:bg-gray-50 transition-colors text-xs"
+            >
+              <Download className="w-3.5 h-3.5" /> Download PNG
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-brass text-white font-medium hover:bg-brass-dark transition-colors text-xs shadow-md shadow-brass/20"
+            >
+              <Printer className="w-3.5 h-3.5" /> Print Stand
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════
 // ─── ADMIN DASHBOARD ───
 // ═══════════════════════════════════════════════════════════
@@ -473,6 +768,7 @@ export default function AdminDashboard() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [editItem, setEditItem] = useState<MenuItem | null | "new">(null);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string; message: string; confirmLabel: string; onConfirm: () => void;
   } | null>(null);
@@ -685,6 +981,13 @@ export default function AdminDashboard() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-espresso/70 font-medium hover:bg-gray-50 transition-colors text-sm"
           >
             <FolderOpen className="w-4 h-4" /> Categories
+          </button>
+
+          <button
+            onClick={() => setShowQrModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brass/30 bg-brass/5 text-brass-dark font-medium hover:bg-brass/10 transition-colors text-sm"
+          >
+            <QrCode className="w-4 h-4 text-brass" /> Table QR Codes
           </button>
 
           <button
@@ -904,6 +1207,13 @@ export default function AdminDashboard() {
             categories={categories}
             onClose={() => setShowCategoryManager(false)}
             onRefresh={fetchData}
+            showToast={showToast}
+          />
+        )}
+        {showQrModal && (
+          <TableQrModal
+            key="table-qr-modal"
+            onClose={() => setShowQrModal(false)}
             showToast={showToast}
           />
         )}
